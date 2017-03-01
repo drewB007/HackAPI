@@ -3,6 +3,7 @@ package cap.ddg.hackapi.event;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.aggregation.Aggregation;
@@ -38,11 +39,31 @@ final class MongoDBEventService implements EventService {
     @Autowired
     MongoTemplate mongoTemplate;
 
-    private RateLimiter ratelimiter = RateLimiter.create(2);
+    private RateLimiter ratelimiter = null;
+
+    @Value("${txn.limit}")
+    private Double rateLimit;
 
     @Autowired
     MongoDBEventService(EventRepository repository) {
         this.repository = repository;
+    }
+
+    private void lazyLoadLimiter(){
+
+        try{
+            if(ratelimiter == null) {
+                this.ratelimiter = RateLimiter.create(rateLimit);
+                LOGGER.info("Created new rate limiter with rate: {}", ratelimiter.getRate());
+            }
+            else{
+                LOGGER.info("Using existing rate limiter with rate: {}", ratelimiter.getRate());
+            }
+        }
+        catch(Exception ex){
+            this.ratelimiter = RateLimiter.create(2);
+        }
+
     }
 
     public List<EventCount> countByTeam(String teamName){
@@ -71,6 +92,7 @@ final class MongoDBEventService implements EventService {
     @Override
     public EventDTO create(EventDTO event) {
         LOGGER.info("Creating a new event entry with information: {}", event);
+        lazyLoadLimiter();
         ratelimiter.acquire();
 
         Event persisted = Event.getBuilder()
