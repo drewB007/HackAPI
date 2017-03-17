@@ -8,9 +8,20 @@ import java.util.Date;
 public class Message {
 
     private String type;
-    private Date created;
+    private Date created = new Date();
     private String sender;
     private String text;
+    private String formattedText;
+
+
+    private void formatText(){
+        formattedText = type + " from: " + sender + " - " + text;
+    }
+
+    public String getFormattedText() {
+        formatText();
+        return formattedText;
+    }
 
     public String getType() {
         return type;

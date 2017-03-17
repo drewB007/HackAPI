@@ -56,7 +56,9 @@ final class EventController {
         event.setTeam(teamName);
         event.setEndpoint(endpoint);
 
-        EventDTO created = service.create(event);
+        //Temp remove update to Mongo
+        // EventDTO created = service.create(event);
+        EventDTO created = event;
         LOGGER.info("Created a new event entry with information: {}", created);
         return created;
     }
